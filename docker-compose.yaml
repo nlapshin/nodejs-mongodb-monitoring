@@ -21,5 +21,11 @@ services:
     - '--config.file=/prometheus/config/prometheus.yaml'
     volumes:
     - ./prometheus:/prometheus/config
-    # depends_on:
-    # - mongo_exporter
+    depends_on:
+    - mongo_exporter
+
+  mongo_exporter:
+    restart: 'always'
+    image: ssheehy/mongodb-exporter
+    container_name: mongo_exporter
+    network_mode: 'host'

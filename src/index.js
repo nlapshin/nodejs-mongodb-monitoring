@@ -1,7 +1,15 @@
 const express = require('express');
 const client = require('prom-client');
 const { setTimeout: delay } = require('timers/promises');
-const { randomInt } = require('crypto');
+const { randomInt, randomUUID } = require('crypto');
+const { MongoClient } = require('mongodb');
+
+const mongodb = new MongoClient('mongodb://localhost:27017', {
+  minPoolSize: 100
+});
+
+const db = mongodb.db('stress-test');
+const collection = db.collection('uuid');
 
 // Создали сервер
 const app = express();
@@ -81,6 +89,15 @@ app.get('/random-error', async (req, res, next) => {
   res.json({ success: true });
 });
 
+app.get('/insert', async (req, res, next) => {
+  const uuid = randomUUID();
+
+  await collection.insertOne({ uuid });
+
+  res.json({ success: true });
+});
+
+
 // Собираем метрики
 app.get('/metrics', async (req, res) => {
   res.set('Content-Type', register.contentType);
@@ -91,8 +108,11 @@ app.use((err, req, res, next) => {
   res.status(500).send('Internal server error');
 });
 
+;(async() => {
+  await mongodb.connect();
 
-// Запускаем сервис
-app.listen(8080, () => {
-  console.log('Server is running on port 8080');
-});
+  // Запускаем сервис
+  app.listen(8080, () => {
+    console.log('Server is running on port 8080');
+  });
+})();
